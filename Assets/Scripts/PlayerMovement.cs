@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -24,86 +25,70 @@ public class PlayerMovement : MonoBehaviour
     {
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
-        Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
-        Vector3 horizontalDirection = new Vector3(horizontal, 0f, 0f).normalized;
-        Vector3 verticalDirection = new Vector3(0f, 0f, vertical).normalized;
 
+        Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
+        Vector3 horizontalDirection = (horizontal * Vector3.right).normalized;
+        Vector3 verticalDirection = (vertical * Vector3.forward).normalized;
+
+
+        // Reset flags if no input is detected
+        if (horizontalflag && horizontal == 0) {
+            horizontalflag = false;
+            if (array[0] == 1) array[0] = 0;
+            else if (array[1] == 1) array[1] = 0;
+        }
+
+        // Reset flags if no input is detected
+        if (verticalflag && vertical == 0) {
+            verticalflag = false;
+            if (array[0] == 2) array[0] = 0;
+            else if (array[1] == 2) array[1] = 0;
+        }
+
+        // Shift second element to front if front is zero
+        if (array[0] == 0 && array[1] != 0) {
+            array[0] = array[1];
+            array[1] = 0;
+        }
 
         if (direction.magnitude >= 0.1f)
         {
-            if (horizontalflag == false && horizontal != 0) {
+
+            if (!horizontalflag && horizontal != 0) {
                 horizontalflag = true;
-                if (array[0] == 0) {
-                    array[0] = 1;
-                }
-                else {
-                    array[0] = 1;
-                }
+                if (array[0] == 0) array[0] = 1;
+                else array[1] = 1;
             }
-            if (verticalflag == false && vertical != 0) {
+
+            if (!verticalflag && vertical != 0) {
                 verticalflag = true;
-                if (array[0] == 0) {
-                    array[0] = 2;
-                }
-                else {
-                    array[1] = 2;
-                }
+                if (array[0] == 0) array[0] = 2;
+                else array[1] = 2;
             }
 
-            if (horizontalflag == true && horizontal == 0) {
-                horizontalflag = false;
-                if (array[0] == 1) {
-                    array[0] = 0;
-                }
-                else {
-                    array[1] = 0;
-                }
-            }
-            if (verticalflag == true && vertical == 0) {
-                verticalflag = false;
-                if (array[0] == 2) {
-                    array[0] = 0;
-                }
-                else {
-                    array[1] = 0;
-                }
-            }
-
-            if (array[0] == 0 && array[1] != 0) {
-                array[0] = array[1];
-                array[1] = 0;
-            }
-
+            // Movement direction selection
             if (array[1] == 0) {
-                if (array[0] == 1) {
-                    direction = horizontalDirection;
-                }
-                else if (array[0] == 2) {
-                    direction = verticalDirection;
-                }
-            }
-
-            if (array[1] != 0) {
-                if (array[1] == 1) {
-                    direction = horizontalDirection;
-                }
-                else if (array[1] == 2) {
-                    direction = verticalDirection;
-                }
+                if (array[0] == 1) direction = horizontalDirection;
+                else if (array[0] == 2) direction = verticalDirection;
+            } else {
+                if (array[1] == 1) direction = horizontalDirection;
+                else if (array[1] == 2) direction = verticalDirection;
             }
 
             controller.Move(direction * speed * Time.deltaTime);
             lastDirection = direction;
 
-            Quaternion targetRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            if (direction != Vector3.zero) {
+                Quaternion targetRotation = Quaternion.LookRotation(direction);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            }
         }
         else
         {
-            horizontalflag = false;
-            verticalflag = false;
-            Quaternion targetRotation = Quaternion.LookRotation(lastDirection);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            if (lastDirection != Vector3.zero) {
+                Quaternion targetRotation = Quaternion.LookRotation(lastDirection);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            }
         }
     }
 }
